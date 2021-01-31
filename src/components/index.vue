@@ -2,6 +2,7 @@
   <v-item-group>
     <v-container>
       <v-row>
+        <!--          Petla for do poruszania sie po stworzonych zadaniach-->
         <v-col
           v-for="(taskElement, index) in tasksList"
           :key="index"
@@ -9,7 +10,8 @@
           md="4"
         >
           <v-item>
-            <v-card :to="{name: 'EditTask', params: {id: taskElement.id}}" @click="addNewTaskList = true">
+<!--          ustawienie :to pozwala przejść do widoku componentu view z parameter id tasku  -->
+            <v-card :to="{name: 'view', params: {id: taskElement.id}}"  @click="addNewTaskList = true">
               <div class="cart-header">
                 <v-card-title>
                   {{ taskElement.name }}
@@ -29,9 +31,12 @@
               </div>
               <v-card-text class="text-center">
                 Status wykonanych zadań
+                <p>
+                  Wszystkie / Wykonane
+                </p>
                 <p class="task-status">
-                  {{ taskElement.doneTask ? taskElement.doneTask : 0 }} /
-                  {{ taskElement.allTask ? taskElement.allTask : 0 }}
+                  {{ taskElement.task_children_count ? taskElement.task_children_count : 0 }} /
+                  {{ taskElement.task_children_done ? taskElement.task_children_done : 0 }}
                 </p>
               </v-card-text>
             </v-card>
@@ -51,6 +56,7 @@
                 </v-card-title>
               </div>
               <v-card-text>
+<!--                vmodel ustawia wartosć zmiennej na co wprowadzimy w input-->
                 <v-text-field v-model="newTaskListName" placeholder="Nazwa" :rules="newTaskRule"
                               required></v-text-field>
                 <v-text-field v-model="newTaskListDescription" placeholder="Opis"></v-text-field>
@@ -95,7 +101,10 @@
 </template>
 
 <script>
+import axios from 'axios'
+
 export default {
+
   data () {
     return {
       addNewTaskList: false,
@@ -104,68 +113,16 @@ export default {
       newTaskRule: [v => (v || '').length > 0 || 'Pole Wymagane'],
       tasksList: [{
         id: 1,
-        name: 'Nazwa  1',
-        description: 'Opis lidasdssssssssssssssssssssssssssssssssssssssssssssssssty 1',
-        allTask: 10,
-        doneTask: 5
-      }, {
-        id: 2,
-        name: 'Nazwa listy 2',
-        description: 'Opis listy 1',
-        tasks: [{
-          name: 'zadanie 1.1',
-          done: false
-        }, {
-          name: 'zadanie 1.2',
-          done: false
-        }]
-      }, {
-        id: 3,
-        name: 'Nazwa listy 3',
-        description: 'Opis listy 1',
-        tasks: [{
-          name: 'zadanie 1.1',
-          done: false
-        }, {
-          name: 'zadanie 1.2',
-          done: false
-        }]
-      }, {
-        id: 4,
-        name: 'Nazwa listy 4',
-        description: 'Opis listy 1',
-        tasks: [{
-          name: 'zadanie 1.1',
-          done: false
-        }, {
-          name: 'zadanie 1.2',
-          done: false
-        }]
-      }, {
-        id: 5,
-        name: 'Nazwa listy 5',
-        description: 'Opis listy 2',
-        tasks: [{
-          name: 'zadanie 2.1',
-          done: false
-        }, {
-          name: 'zadanie 2.1',
-          done: false
-        }, {
-          name: 'zadanie 2.1',
-          done: false
-        }, {
-          name: 'zadanie 2.1',
-          done: false
-        }, {
-          name: 'zadanie 2.1',
-          done: false
-        }, {
-          name: 'zadanie 2.2',
-          done: false
-        }]
+        name: '',
+        description: '',
+        task_children_count: 0,
+        task_children_done: 0
       }]
     }
+  },
+
+  created () {
+    this.refreshTasksList()
   },
 
   computed: {
@@ -175,26 +132,30 @@ export default {
   },
 
   methods: {
-    addTaskList () {
-      if (this.newTaskListName !== '') {
-        const lastTaskListId = this.tasksList.length === 0 ? 1 : this.tasksList[this.tasksList.length - 1].id
-        this.tasksList.push({
-          id: lastTaskListId + 1,
-          name: this.newTaskListName,
-          description: this.newTaskListDescription
-        })
-        this.newTaskListName = ''
-        this.newTaskListDescription = ''
-        this.addNewTaskList = false
-      }
+    async removeTaskList (taskListId) {
+      this.addNewTaskList = false
+      await axios.delete('http://127.0.0.1:8000/task_root/' + taskListId + '/')
+      await this.refreshTasksList()
     },
 
-    removeTaskList (taskListId) {
-      this.tasksList = this.tasksList.filter(task => task.id !== taskListId)
-      this.addNewTaskList = false
+    async refreshTasksList () {
+      const taskElementsApi = await axios.get('http://127.0.0.1:8000/task_root/')
+      this.tasksList = taskElementsApi.data
+    },
+
+    async addTaskList () {
+      if (this.newTaskListName !== '') {
+        await axios.post('http://127.0.0.1:8000/task_root/', { name: this.newTaskListName, description: this.newTaskListDescription })
+        this.addNewTaskList = false
+        this.newTaskListDescription = ''
+        this.newTaskListName = ''
+        await this.refreshTasksList()
+      }
     }
+
   }
 }
+
 </script>
 
 <style>

@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Home from '../views/Home.vue'
-import EditTask from '../views/EditTask.vue'
+import view from '../components/view.vue'
 
 Vue.use(VueRouter)
 
@@ -12,9 +12,9 @@ const routes = [
     component: Home
   },
   {
-    path: '/edit_task/:id',
-    name: 'EditTask',
-    component: EditTask
+    path: '/view/:id',
+    name: 'view',
+    component: view
   }
 ]
 
